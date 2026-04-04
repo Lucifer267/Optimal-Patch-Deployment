@@ -1,0 +1,13 @@
+vuln_id,cve_id,patch_id,patch_name,asset_id,asset_name,system_group,service_name,cvss,exploit_probability,exploit_available,active_exploitation,asset_criticality,data_sensitivity,exposure_level,internet_facing,patch_time,patch_cost,manpower_required,remediation_effectiveness,patch_failure_risk,disruption_impact,rollback_complexity,age_days,severity_label,sla_deadline_days,days_open,dependencies,conflicts
+V0001,CVE-2025-1001,P001,Patch for Auth Bypass,A001,Payments API,ERP,Auth,9.8,0.97,1,1,5,5,5,1,5.0,5200,4.0,0.95,0.18,0.32,0.44,180,Critical,14,12,,
+V0002,CVE-2025-1002,P002,Patch for RCE,A002,Identity Gateway,Cloud,Gateway,9.4,0.92,1,1,5,4,5,1,4.5,4100,3.5,0.93,0.14,0.22,0.36,150,Critical,10,8,P001,
+V0003,CVE-2025-1003,P003,Patch for SQL Injection,A003,Customer Portal,Web,Web,8.8,0.84,1,0,4,4,4,1,3.0,2800,2.5,0.90,0.09,0.18,0.21,95,High,18,11,,P006
+V0004,CVE-2025-1004,P004,Patch for Priv Esc,A004,ERP Database,ERP,Database,8.7,0.78,0,0,5,5,4,0,4.2,3600,3.0,0.87,0.10,0.15,0.28,210,High,20,16,P002,
+V0005,CVE-2025-1005,P005,Patch for Memory Corruption,A005,Cloud Router,Cloud,API,9.1,0.88,1,0,4,3,5,1,2.5,2200,2.0,0.91,0.11,0.19,0.25,75,Critical,12,9,P002,
+V0006,CVE-2025-1006,P006,Patch for Weak Cipher,A006,File Service,Endpoints,Web,6.9,0.56,0,0,3,4,3,0,1.8,1400,1.5,0.86,0.07,0.12,0.18,60,Medium,25,14,P003,
+V0007,CVE-2025-1007,P007,Patch for Token Leakage,A007,Finance Portal,Web,Auth,9.0,0.90,1,1,5,5,5,1,4.8,4700,4.5,0.94,0.15,0.25,0.33,200,Critical,9,7,P004|P005,
+V0008,CVE-2025-1008,P008,Patch for Deserialization,A008,SIEM,DataLake,API,7.8,0.71,1,0,4,4,4,1,3.6,2500,2.6,0.89,0.08,0.17,0.20,130,High,16,10,P006,
+V0009,CVE-2025-1009,P009,Patch for SSRF,A009,Proxy Layer,Cloud,Gateway,8.4,0.80,1,0,4,3,5,1,2.9,2000,2.1,0.88,0.09,0.14,0.19,110,High,14,13,P005,
+V0010,CVE-2025-1010,P010,Patch for XSS,A010,Public Web,Web,Web,7.1,0.62,1,0,3,3,4,1,1.4,900,1.0,0.83,0.06,0.10,0.12,45,Medium,30,5,,
+V0011,CVE-2025-1011,P011,Patch for Lateral Movement,A011,Endpoint Fleet,Endpoints,Auth,8.0,0.69,1,0,4,4,3,0,2.1,1250,1.6,0.84,0.08,0.11,0.16,88,High,21,19,P010,
+V0012,CVE-2025-1012,P012,Patch for Secret Exposure,A012,Secrets Store,DataLake,Database,9.3,0.95,1,1,5,5,5,1,5.2,5400,4.8,0.96,0.16,0.28,0.39,230,Critical,8,6,P009,

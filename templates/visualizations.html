@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>Advanced Analytics</h1>
+    <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Comprehensive visualization of optimization results, risk distribution, and deployment insights</p>
+  </div>
+</div>
+
+<div class="content-grid" style="gap: 32px; margin-bottom: 32px;">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">📊</span>
+        <h3 style="margin: 0; font-weight: 700;">Risk Distribution</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Histogram of adjusted patch values showing selected vs rejected patches</p>
+    </div>
+    <div class="card-body" style="min-height: 380px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.risk_distribution|safe }}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">⚡</span>
+        <h3 style="margin: 0; font-weight: 700;">Resource Utilization</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Breakdown of maintenance time, budget, and manpower consumption</p>
+    </div>
+    <div class="card-body" style="min-height: 380px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.resource_utilization|safe }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid" style="gap: 32px; margin-bottom: 32px;">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">📅</span>
+        <h3 style="margin: 0; font-weight: 700;">SLA Urgency Analysis</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Patches prioritized by SLA deadline urgency</p>
+    </div>
+    <div class="card-body" style="min-height: 380px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.sla|safe }}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">🏢</span>
+        <h3 style="margin: 0; font-weight: 700;">System Coverage</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Risk reduction aggregated by system group</p>
+    </div>
+    <div class="card-body" style="min-height: 380px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.system_breakdown|safe }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid-single-col" style="gap: 32px;">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">🔗</span>
+        <h3 style="margin: 0; font-weight: 700;">Dependency Graph</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Logical dependencies and relationships between selected and rejected patches</p>
+    </div>
+    <div class="card-body" style="min-height: 420px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.dependency_graph|safe }}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.5rem;">📈</span>
+        <h3 style="margin: 0; font-weight: 700;">Deployment Timeline</h3>
+      </div>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Batched execution schedule with cumulative resource consumption</p>
+    </div>
+    <div class="card-body" style="min-height: 420px; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 100%; height: 100%;">
+        {{ plots.schedule|safe }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

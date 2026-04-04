@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-value">{{ state.preview|length if state.preview else 0 }}</div>
+    <div class="kpi-label">Patch Candidates</div>
+    <div class="kpi-desc">From '{{ state.dataset_name or 'sample_small' }}' dataset</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ state.selected_algorithm|replace('_', ' ')|title if state.selected_algorithm else 'Not Set' }}</div>
+    <div class="kpi-label">Active Solver</div>
+    <div class="kpi-desc">Optimization algorithm in use</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ '%d'|format(state.total_risk|int) if state.total_risk else '0' }}</div>
+    <div class="kpi-label">Total Risk Score</div>
+    <div class="kpi-desc">Sum of all candidate patch risks</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ state.total_patches if state.total_patches else '0' }}</div>
+    <div class="kpi-label">Total Patches</div>
+    <div class="kpi-desc">Number of items in the dataset</div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <div class="card card-large">
+    <div class="card-header">
+      <h2>Control Center</h2>
+      <p>Configure and run the optimization solver.</p>
+    </div>
+    <div class="card-body">
+      <form action="{{ url_for('solve') }}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sample_dataset">Target Dataset</label>
+            <select name="sample_dataset" id="sample_dataset" class="form-control">
+              {% for key in sample_files.keys() %}
+              <option value="{{ key }}" {% if state and key == state.dataset_name %}selected{% endif %}>{{ key|replace('_', ' ')|title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="algorithm">Solver Algorithm</label>
+            <select name="algorithm" id="algorithm" class="form-control">
+              {% for key, label in algorithms.items() %}
+              <option value="{{ key }}" {% if state and key == state.selected_algorithm %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="capacity_maintenance_window_hours">Maintenance Hours</label>
+            <input type="number" id="capacity_maintenance_window_hours" name="capacity_maintenance_window_hours" value="{{ default_capacities.maintenance_window_hours }}" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="capacity_budget">Budget (₹)</label>
+            <input type="number" id="capacity_budget" name="capacity_budget" value="{{ default_capacities.budget }}" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="capacity_manpower">Manpower</label>
+            <input type="number" id="capacity_manpower" name="capacity_manpower" value="{{ default_capacities.manpower }}" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group form-group-checkbox">
+                <input type="checkbox" id="dependency_mode" name="dependency_mode" checked>
+                <label for="dependency_mode">Enable Dependency Resolution</label>
+            </div>
+            <div class="form-group form-group-checkbox">
+                <input type="checkbox" id="sla_mode" name="sla_mode" checked>
+                <label for="sla_mode">Enable SLA-Aware Prioritization</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Run Optimization</button>
+          <button type="submit" formaction="{{ url_for('compare_all') }}" formmethod="post" class="btn btn-secondary">Compare All Solvers</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Data Preview</h2>
+      <p>A snapshot of the current dataset.</p>
+    </div>
+    <div class="card-body card-body-table">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Patch ID</th>
+              <th>Risk Score</th>
+              <th>SLA</th>
+              <th>Dependencies</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if state.preview %}
+              {% for patch in state.preview[:7] %}
+              <tr>
+                <td>{{ patch.id }}</td>
+                <td>{{ patch.risk_score }}</td>
+                <td>{{ patch.sla }}</td>
+                <td>{{ patch.dependencies|join(', ') if patch.dependencies else 'None' }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="4">No data loaded. Run an optimization to see a preview.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if state.preview and state.preview|length > 7 %}
+    <div class="card-footer">
+      <p>Showing 7 of {{ state.preview|length }} patches.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

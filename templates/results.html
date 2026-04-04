@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>Optimization Results</h1>
+    <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Results from {{ summary.solver_name or 'selected' }} solver</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-value" style="color: #10b981;">{{ '%.3f'|format(summary.total_risk_reduced or 0) }}</div>
+    <div class="kpi-label">Risk Reduced</div>
+    <div class="kpi-desc">Total contextual value improvement from selected patches</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color: #a435f0;">{{ selected_count }}</div>
+    <div class="kpi-label">Patches Selected</div>
+    <div class="kpi-desc">Feasible solution size</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color: #0ea5e9;">{{ '%.3f'|format(summary.runtime_seconds or 0) }}s</div>
+    <div class="kpi-label">Solver Time</div>
+    <div class="kpi-desc">Computation time</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color: #f59e0b;">₹{{ '{:,.2f}'.format(summary.total_cost or 0) }}</div>
+    <div class="kpi-label">Budget Used</div>
+    <div class="kpi-desc">Resource allocation</div>
+  </div>
+</div>
+
+<div class="content-grid-single-col">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <div style="width: 4px; height: 24px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 2px;"></div>
+        <h2 style="margin: 0;">Deployment-Ready Patches</h2>
+      </div>
+      <p>{{ selected_count }} patch{{ 's' if selected_count != 1 else '' }} selected for deployment by the '{{ summary.solver_name or 'Default' }}' solver</p>
+    </div>
+    <div class="card-body card-body-table">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">Patch ID</th>
+              <th style="width: 18%;">Risk Value</th>
+              <th style="width: 12%;">Time (h)</th>
+              <th style="width: 12%;">Cost</th>
+              <th style="width: 12%;">Manpower</th>
+              <th style="width: 15%;">SLA Days</th>
+              <th style="width: 16%;">Dependencies</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in selected_table %}
+            <tr style="background-color: rgba(16, 185, 129, 0.05);">
+              <td><strong style="color: #10b981;">{{ row.patch_id }}</strong></td>
+              <td><span style="background: rgba(16, 185, 129, 0.2); padding: 4px 8px; border-radius: 4px; font-weight: 600; color: #059669;">{{ '%.3f'|format(row.adjusted_patch_value) if row.get('adjusted_patch_value') else 'N/A' }}</span></td>
+              <td>{{ row.patch_time }}</td>
+              <td>₹{{ '{:,.2f}'.format(row.patch_cost) if row.get('patch_cost') else 'N/A' }}</td>
+              <td>{{ row.manpower_required }}</td>
+              <td>{{ row.sla_deadline_days }}</td>
+              <td><small style="color: var(--text-secondary);">{{ row.dependencies|join(', ') if row.dependencies else '—' }}</small></td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-secondary);">No patches were selected. This could be due to restrictive constraints or an empty dataset.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <div style="width: 4px; height: 24px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 2px;"></div>
+        <h2 style="margin: 0;">Deferred Patches</h2>
+      </div>
+      <p>{{ rejected_table|length }} patch{{ 's' if rejected_table|length != 1 else '' }} not selected due to constraints or lower priority</p>
+    </div>
+    <div class="card-body card-body-table">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">Patch ID</th>
+              <th style="width: 18%;">Risk Value</th>
+              <th style="width: 12%;">Time (h)</th>
+              <th style="width: 12%;">Cost</th>
+              <th style="width: 12%;">Manpower</th>
+              <th style="width: 15%;">SLA Days</th>
+              <th style="width: 16%;">Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rejected_table %}
+            <tr style="background-color: rgba(239, 68, 68, 0.05); opacity: 0.85;">
+              <td><span style="color: #dc2626;">{{ row.patch_id }}</span></td>
+              <td><span style="background: rgba(239, 68, 68, 0.15); padding: 4px 8px; border-radius: 4px; color: #991b1b;">{{ '%.3f'|format(row.adjusted_patch_value) if row.get('adjusted_patch_value') else 'N/A' }}</span></td>
+              <td>{{ row.patch_time }}</td>
+              <td>₹{{ '{:,.2f}'.format(row.patch_cost) if row.get('patch_cost') else 'N/A' }}</td>
+              <td>{{ row.manpower_required }}</td>
+              <td>{{ row.sla_deadline_days }}</td>
+              <td><small style="color: var(--text-secondary);">{{ explanation_map.get(row.patch_id, 'Lower priority') }}</small></td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-secondary);">All candidate patches were feasible for selection.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3>Resource Utilization</h3>
+      <p>How effectively the solution uses available capacity</p>
+    </div>
+    <div class="card-body">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 600;">Maintenance Time</span>
+            <span style="color: var(--text-secondary); font-weight: 600;">{{ '%.1f'|format((summary.time_utilization or 0) * 100) }}%</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #f0f1f3; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; background: linear-gradient(90deg, #0ea5e9, #0284c7); width: {{ (summary.time_utilization or 0) * 100 }}%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 600;">Budget</span>
+            <span style="color: var(--text-secondary); font-weight: 600;">{{ '%.1f'|format((summary.cost_utilization or 0) * 100) }}%</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #f0f1f3; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; background: linear-gradient(90deg, #f59e0b, #f97316); width: {{ (summary.cost_utilization or 0) * 100 }}%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 600;">Manpower</span>
+            <span style="color: var(--text-secondary); font-weight: 600;">{{ '%.1f'|format((summary.manpower_utilization or 0) * 100) }}%</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #f0f1f3; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; background: linear-gradient(90deg, #a435f0, #8e24aa); width: {{ (summary.manpower_utilization or 0) * 100 }}%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Solution Summary</h3>
+      <p>Key metrics and statistics</p>
+    </div>
+    <div class="card-body">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; justify-content: space-between; padding: 12px; background: #f8f9fc; border-radius: 6px; border-left: 3px solid #a435f0;">
+          <span style="font-weight: 600;">Total Patches</span>
+          <span style="color: var(--primary-accent); font-weight: 700;">{{ selected_count + (rejected_table|length) }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 12px; background: #f8f9fc; border-radius: 6px; border-left: 3px solid #10b981;">
+          <span style="font-weight: 600;">Selected</span>
+          <span style="color: #10b981; font-weight: 700;">{{ selected_count }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 12px; background: #f8f9fc; border-radius: 6px; border-left: 3px solid #ef4444;">
+          <span style="font-weight: 600;">Rejected</span>
+          <span style="color: #ef4444; font-weight: 700;">{{ rejected_table|length }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 12px; background: #f8f9fc; border-radius: 6px; border-left: 3px solid #0ea5e9;">
+          <span style="font-weight: 600;">Runtime</span>
+          <span style="color: #0284c7; font-weight: 700;">{{ '%.3f'|format(summary.runtime_seconds or 0) }}s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid-single-col">
+  <div class="card">
+    <div class="card-header">
+      <h3>📅 Deployment Schedule</h3>
+      <p>Dependency-safe execution order for maintenance batches</p>
+    </div>
+    <div class="card-body">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for step in result.schedule %}
+        <div style="display: flex; align-items: center; gap: 16px; padding: 12px; background: #f8f9fc; border-radius: 8px; border-left: 4px solid var(--primary-accent);">
+          <div style="min-width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary-accent), #8e24aa); color: white; border-radius: 6px; font-weight: 700; font-size: 0.9rem;">{{ step.position }}</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 700; color: var(--text-primary);">{{ step.patch_id }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Batch {{ step.batch }} • {{ step.patch_time }}h • Priority: {{ '%.2f'|format(step.priority_score) }}</div>
+          </div>
+          <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">SLA: {{ '%.2f'|format(step.sla_urgency_component) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>💡 Risk Analysis Insights</h3>
+      <p>Factors emphasized by the scoring engine</p>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="padding: 16px; background: #f8f9fc; border-radius: 8px; border-top: 3px solid #f59e0b;">
+          <div style="font-weight: 700; margin-bottom: 6px; color: #92400e;">⏱️ Time Decay</div>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Older vulnerabilities rise in priority as exposure persists.</p>
+        </div>
+        <div style="padding: 16px; background: #f8f9fc; border-radius: 8px; border-top: 3px solid #ef4444;">
+          <div style="font-weight: 700; margin-bottom: 6px; color: #991b1b;">🎯 Exploit Availability</div>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Known exploit code urgently prioritizes patches.</p>
+        </div>
+        <div style="padding: 16px; background: #f8f9fc; border-radius: 8px; border-top: 3px solid #0ea5e9;">
+          <div style="font-weight: 700; margin-bottom: 6px; color: #075985;">⚠️ Failure Risk</div>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">High rollback complexity reduces adjusted benefit.</p>
+        </div>
+        <div style="padding: 16px; background: #f8f9fc; border-radius: 8px; border-top: 3px solid #a435f0;">
+          <div style="font-weight: 700; margin-bottom: 6px; color: #6b21a8;">📊 SLA Urgency</div>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Near-breach items scheduled before lower priority.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

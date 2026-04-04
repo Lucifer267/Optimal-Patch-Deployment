@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>Algorithm Benchmarking</h1>
+    <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Performance comparison across all available optimization solvers</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%); border-left: 4px solid #10b981;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #059669;">Best Quality</div>
+        <div class="kpi-value" style="color: #10b981; font-size: 1.8rem;">{{ summary.best_algorithm or 'n/a' }}</div>
+        <div class="kpi-desc" style="color: #059669;">Highest risk reduction</div>
+      </div>
+      <div style="font-size: 2.5rem; opacity: 0.3;">🏆</div>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fef3c7 100%); border-left: 4px solid #f59e0b;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #92400e;">Fastest Solver</div>
+        <div class="kpi-value" style="color: #f59e0b; font-size: 1.8rem;">{{ summary.fastest_algorithm or 'n/a' }}</div>
+        <div class="kpi-desc" style="color: #92400e;">Lowest runtime</div>
+      </div>
+      <div style="font-size: 2.5rem; opacity: 0.3;">⚡</div>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #f0f9ff 100%); border-left: 4px solid #0ea5e9;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #075985;">Peak Performance</div>
+        <div class="kpi-value" style="color: #0284c7; font-size: 1.8rem;">{{ '%.2f'|format(summary.best_risk or 0) }}</div>
+        <div class="kpi-desc" style="color: #075985;">Maximum risk score</div>
+      </div>
+      <div style="font-size: 2.5rem; opacity: 0.3;">📊</div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid-single-col">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 4px; height: 28px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 2px;"></div>
+          <div>
+            <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Performance Metrics</h2>
+            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">Complete algorithm comparison with resource utilization</p>
+          </div>
+        </div>
+        <div style="font-size: 2.5rem; opacity: 0.15;">📊</div>
+      </div>
+    </div>
+    <div class="card-body card-body-table">
+      <div class="table-container" style="overflow-x: auto;">
+        <table style="width: 100%;">
+          <thead>
+            <tr style="background: linear-gradient(90deg, #f0f1f3 0%, #e8eaef 100%); border-bottom: 2px solid #a435f0;">
+              <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Algorithm</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Risk Score</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Runtime</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Count</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Budget</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Time</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Manpower</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Feasible</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in comparison_rows %}
+            <tr style="background: white; border-bottom: 1px solid #e2e8f0; transition: all 0.25s ease; cursor: pointer; border-left: 4px solid {% if row.feasible %}#10b981{% else %}#ef4444{% endif %};" onmouseover="this.style.background='#f8fafb'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)';" onmouseout="this.style.background='white'; this.style.boxShadow='none';">
+              
+              <td style="padding: 14px 16px; font-weight: 600; color: var(--primary-accent); display: flex; align-items: center; gap: 8px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-accent), #8e24aa); flex-shrink: 0;"></div>
+                {{ algorithms[row.algorithm] if row.algorithm in algorithms else row.algorithm|replace('_', ' ')|title }}
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center;">
+                <div style="display: inline-block; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2); font-weight: 700; color: #059669; font-size: 0.9rem;">
+                  {{ '%.3f'|format(row.risk_reduced) }}
+                </div>
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: 600; color: #475569;">
+                {{ '%.4f'|format(row.runtime_seconds) }}s
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center; font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">
+                {{ row.selected }}
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 100%; max-width: 80px; height: 6px; background: #f0f1f3; border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: {% if row.cost_utilization >= 0.75 %}linear-gradient(90deg, #10b981 0%, #059669 100%){% elif row.cost_utilization >= 0.5 %}linear-gradient(90deg, #f59e0b 0%, #d97706 100%){% else %}linear-gradient(90deg, #ef4444 0%, #dc2626 100%){% endif %}; width: {{ row.cost_utilization * 100 }}%; transition: width 0.4s ease;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: {% if row.cost_utilization >= 0.75 %}#059669{% elif row.cost_utilization >= 0.5 %}#b45309{% else %}#991b1b{% endif %};">{{ '%.0f'|format(row.cost_utilization * 100) }}%</span>
+                </div>
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 100%; max-width: 80px; height: 6px; background: #f0f1f3; border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: {% if row.time_utilization >= 0.75 %}linear-gradient(90deg, #10b981 0%, #059669 100%){% elif row.time_utilization >= 0.5 %}linear-gradient(90deg, #f59e0b 0%, #d97706 100%){% else %}linear-gradient(90deg, #ef4444 0%, #dc2626 100%){% endif %}; width: {{ row.time_utilization * 100 }}%; transition: width 0.4s ease;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: {% if row.time_utilization >= 0.75 %}#059669{% elif row.time_utilization >= 0.5 %}#b45309{% else %}#991b1b{% endif %};">{{ '%.0f'|format(row.time_utilization * 100) }}%</span>
+                </div>
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 100%; max-width: 80px; height: 6px; background: #f0f1f3; border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: {% if row.manpower_utilization >= 0.75 %}linear-gradient(90deg, #10b981 0%, #059669 100%){% elif row.manpower_utilization >= 0.5 %}linear-gradient(90deg, #f59e0b 0%, #d97706 100%){% else %}linear-gradient(90deg, #ef4444 0%, #dc2626 100%){% endif %}; width: {{ row.manpower_utilization * 100 }}%; transition: width 0.4s ease;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: {% if row.manpower_utilization >= 0.75 %}#059669{% elif row.manpower_utilization >= 0.5 %}#b45309{% else %}#991b1b{% endif %};">{{ '%.0f'|format(row.manpower_utilization * 100) }}%</span>
+                </div>
+              </td>
+              
+              <td style="padding: 14px 16px; text-align: center;">
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; {% if row.feasible %}background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);{% else %}background: rgba(239, 68, 68, 0.15); color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.3);{% endif %}">
+                  {{ '✓' if row.feasible else '✗' }}
+                  {{ 'Feasible' if row.feasible else 'Infeasible' }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; align-items: center; gap: 20px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: var(--text-secondary);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></div>
+          <span>Feasible solution</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></div>
+          <span>Infeasible solution</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3 style="margin: 0 0 4px 0; font-weight: 700;">Risk Reduction Ranking</h3>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Solution quality by algorithm</p>
+    </div>
+    <div class="card-body" style="min-height: 350px; display: flex; align-items: center; justify-content: center;">
+      <div id="comparison-chart" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 style="margin: 0 0 4px 0; font-weight: 700;">Runtime Comparison</h3>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Execution time (log scale)</p>
+    </div>
+    <div class="card-body" style="min-height: 350px; display: flex; align-items: center; justify-content: center;">
+      <div id="runtime-chart" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3 style="margin: 0 0 4px 0; font-weight: 700;">Quality vs. Performance Frontier</h3>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Pareto efficiency analysis</p>
+    </div>
+    <div class="card-body" style="min-height: 350px; display: flex; align-items: center; justify-content: center;">
+      <div id="tradeoff-chart" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 style="margin: 0 0 4px 0; font-weight: 700;">Approximation Gap Analysis</h3>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Deviation from optimal</p>
+    </div>
+    <div class="card-body" style="min-height: 350px; display: flex; align-items: center; justify-content: center;">
+      <div id="gap-chart" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const comparisonRows = {{ comparison_rows | tojson }};
+  const algorithmLabels = {{ algorithms | tojson }};
+  const algorithmNames = comparisonRows.map(row => algorithmLabels[row.algorithm] || row.algorithm.replace(/_/g, ' '));
+  
+  // PowerBI-inspired color palettes
+  const colorPalette = ['#a435f0', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#f97316'];
+  
+  const baseLayout = {
+    template: 'plotly_white',
+    margin: { l: 70, r: 30, t: 30, b: 80 },
+    font: {
+      family: 'Inter, sans-serif',
+      size: 12,
+      color: '#64748b'
+    },
+    paper_bgcolor: 'rgba(255, 255, 255, 0)',
+    plot_bgcolor: 'rgba(248, 249, 252, 0.5)',
+    hoverlabel: {
+      bgcolor: 'white',
+      bordercolor: '#a435f0',
+      namelength: -1
+    },
+    yaxis: {
+      gridcolor: '#e2e8f0',
+      gridwidth: 1,
+      zeroline: false,
+      showline: true,
+      linewidth: 1,
+      linecolor: '#cbd5e1'
+    },
+    xaxis: {
+      gridcolor: '#e2e8f0',
+      zeroline: false,
+      showline: true,
+      linewidth: 1,
+      linecolor: '#cbd5e1',
+      tickangle: -45
+    }
+  };
+
+  // Quality Chart - Column Chart with gradient
+  const qualityColors = comparisonRows.map((row, i) => colorPalette[i % colorPalette.length]);
+  const qualityLayout = { 
+    ...baseLayout, 
+    title: { text: '', x: 0, xanchor: 'left' },
+    yaxis: { ...baseLayout.yaxis, title: { text: 'Risk Reduction Score', font: { size: 12, color: '#334155' } } },
+    xaxis: { ...baseLayout.xaxis, title: '' }
+  };
+  Plotly.newPlot('comparison-chart', [{
+    x: algorithmNames,
+    y: comparisonRows.map(row => row.risk_reduced),
+    type: 'bar',
+    marker: { 
+      color: qualityColors,
+      line: { color: 'rgba(255, 255, 255, 0.5)', width: 1 }
+    },
+    hovertemplate: '<b>%{x}</b><br>Risk Reduced: %{y:.3f}<extra></extra>',
+    name: 'Risk Reduction'
+  }], qualityLayout, { responsive: true });
+
+  // Runtime Chart - Log scale with gradient
+  const runtimeLayout = { 
+    ...baseLayout, 
+    yaxis: { 
+      ...baseLayout.yaxis,
+      type: 'log', 
+      title: { text: 'Runtime (seconds, log scale)', font: { size: 12, color: '#334155' } }
+    },
+    xaxis: { ...baseLayout.xaxis, title: '' }
+  };
+  Plotly.newPlot('runtime-chart', [{
+    x: algorithmNames,
+    y: comparisonRows.map(row => Math.max(row.runtime_seconds, 0.0001)),
+    type: 'bar',
+    marker: { 
+      color: qualityColors,
+      line: { color: 'rgba(255, 255, 255, 0.5)', width: 1 }
+    },
+    hovertemplate: '<b>%{x}</b><br>Runtime: %{y:.4f}s<extra></extra>',
+    name: 'Runtime'
+  }], runtimeLayout, { responsive: true });
+
+  // Tradeoff Chart - Scatter with enhanced styling
+  const tradeoffLayout = { 
+    ...baseLayout, 
+    margin: { l: 70, r: 30, t: 30, b: 80 },
+    xaxis: { 
+      ...baseLayout.xaxis,
+      type: 'log', 
+      title: { text: 'Runtime (seconds, log scale)', font: { size: 12, color: '#334155' } },
+      tickangle: 0
+    }, 
+    yaxis: { 
+      ...baseLayout.yaxis,
+      title: { text: 'Risk Reduction Score', font: { size: 12, color: '#334155' } }
+    }
+  };
+  Plotly.newPlot('tradeoff-chart', [{
+    x: comparisonRows.map(row => Math.max(row.runtime_seconds, 0.0001)),
+    y: comparisonRows.map(row => row.risk_reduced),
+    mode: 'markers+text',
+    type: 'scatter',
+    text: algorithmNames.map(n => n.split(' ')[0]),
+    textposition: 'top center',
+    textfont: { size: 10, color: '#334155', family: 'monospace' },
+    marker: { 
+      size: 16,
+      color: qualityColors,
+      line: { color: 'white', width: 2 },
+      opacity: 0.9
+    },
+    hovertemplate: '<b>%{text}</b><br>Runtime: %{x:.4f}s<br>Risk Reduced: %{y:.3f}<extra></extra>',
+    name: 'Algorithm'
+  }], tradeoffLayout, { responsive: true });
+
+  // Gap Chart - Diverging bar chart
+  const gapColors = comparisonRows.map(row => row.approximation_gap > 0.5 ? '#ef4444' : row.approximation_gap > 0.1 ? '#f59e0b' : '#10b981');
+  const gapLayout = { 
+    ...baseLayout,
+    yaxis: { 
+      ...baseLayout.yaxis,
+      title: { text: 'Approximation Gap (%)', font: { size: 12, color: '#334155' } }
+    },
+    xaxis: { ...baseLayout.xaxis, title: '' }
+  };
+  Plotly.newPlot('gap-chart', [{
+    x: algorithmNames,
+    y: comparisonRows.map(row => row.approximation_gap * 100),
+    type: 'bar',
+    marker: { 
+      color: gapColors,
+      line: { color: 'rgba(255, 255, 255, 0.5)', width: 1 }
+    },
+    hovertemplate: '<b>%{x}</b><br>Gap: %{y:.2f}%<extra></extra>',
+    name: 'Approximation Gap'
+  }], gapLayout, { responsive: true });
+
+  // Resize handler for responsive charts
+  window.addEventListener('resize', function() {
+    Plotly.Plots.resize('comparison-chart');
+    Plotly.Plots.resize('runtime-chart');
+    Plotly.Plots.resize('tradeoff-chart');
+    Plotly.Plots.resize('gap-chart');
+  });
+</script>
+{% endblock %}
