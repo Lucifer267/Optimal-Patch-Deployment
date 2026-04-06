@@ -100,7 +100,7 @@ def risk_breakdown(row: pd.Series, weights: Dict[str, float], adversarial_mode: 
     }
 
 
-def score_dataset(dataframe: pd.DataFrame, weights: Dict[str, float], adversarial_mode: bool = False) -> pd.DataFrame:
+def score_dataset(dataframe: pd.DataFrame, weights: Dict[str, float], adversarial_mode: bool = False, sla_mode: bool = True) -> pd.DataFrame:
     scored = dataframe.copy()
     breakdown_rows = scored.apply(lambda row: risk_breakdown(row, weights, adversarial_mode), axis=1)
     breakdown_df = pd.DataFrame(list(breakdown_rows))
@@ -109,10 +109,23 @@ def score_dataset(dataframe: pd.DataFrame, weights: Dict[str, float], adversaria
     scored["value_per_resource"] = scored["adjusted_patch_value"] / (
         scored["patch_time"] + scored["patch_cost"] / 10000.0 + scored["manpower_required"]
     ).replace(0, 0.0001)
-    scored["priority_score"] = (
-        scored["adjusted_patch_value"]
-        + 0.15 * scored["sla_urgency_component"]
-        + 0.10 * scored["time_decay_component"]
-        + 0.05 * scored["attacker_pressure_component"]
-    )
+    
+    # Adjust priority scoring based on SLA mode
+    if sla_mode:
+        # SLA-Aware: Boost SLA urgency component weight to prioritize deadline-critical patches
+        scored["priority_score"] = (
+            scored["adjusted_patch_value"]
+            + 0.30 * scored["sla_urgency_component"]  # Doubled from 0.15
+            + 0.10 * scored["time_decay_component"]
+            + 0.05 * scored["attacker_pressure_component"]
+        )
+    else:
+        # Risk-Only: Focus purely on risk/impact without SLA consideration
+        scored["priority_score"] = (
+            scored["adjusted_patch_value"]
+            + 0.05 * scored["sla_urgency_component"]  # Reduced from 0.15
+            + 0.10 * scored["time_decay_component"]
+            + 0.05 * scored["attacker_pressure_component"]
+        )
+    
     return scored

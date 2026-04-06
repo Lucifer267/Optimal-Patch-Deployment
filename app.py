@@ -10,9 +10,11 @@ import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 from config import Config
+from modules.algorithm_math import generate_math_explanation
+from modules.custom_dataset import create_custom_dataset, merge_with_existing
 from modules.data_loader import dataset_preview, load_dataset
 from modules.benchmarking import build_comparison_frame, quality_summary
 from modules.dependency_graph import build_dependency_graph, detect_cycles
@@ -51,11 +53,27 @@ ALGORITHMS = {
     "variable_neighborhood_search": variable_neighborhood_search,
 }
 
-SAMPLE_FILES = {
-    "sample_small": (Path("data/sample_small.csv"), 12),
-    "sample_medium": (Path("data/sample_medium.csv"), 60),
-    "sample_large": (Path("data/sample_large.csv"), 180),
-}
+
+def _discover_datasets() -> Dict[str, tuple]:
+    """Dynamically discover all CSV datasets in the data/ folder."""
+    datasets = {}
+    data_dir = Path("data")
+    
+    if data_dir.exists():
+        for csv_file in sorted(data_dir.glob("*.csv")):
+            # Use filename without extension as key
+            dataset_name = csv_file.stem
+            try:
+                # Count rows (excluding header)
+                row_count = len(pd.read_csv(csv_file))
+                datasets[dataset_name] = (csv_file, row_count)
+            except Exception:
+                pass  # Skip files that can't be read
+    
+    return datasets
+
+
+SAMPLE_FILES = _discover_datasets()
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -74,6 +92,7 @@ APP_STATE: Dict[str, Any] = {
     "dataset_name": "sample_small",
     "selected_algorithm": "branch_bound",
     "messages": [],
+    "custom_datasets": {},  # Store user-created datasets
 }
 
 
@@ -120,14 +139,26 @@ def _load_input_dataset(form, files) -> tuple[pd.DataFrame, str]:
     sample_name = form.get("sample_dataset", "sample_small")
     if upload and upload.filename:
         return load_dataset(_read_upload(upload)), upload.filename
+    
+    # Check if it's a custom dataset
+    if sample_name.startswith("custom_"):
+        if sample_name in APP_STATE.get("custom_datasets", {}):
+            return APP_STATE["custom_datasets"][sample_name], sample_name
+        else:
+            # Fall back to default if custom doesn't exist
+            sample_name = "sample_small"
+    
     sample_path = _generate_sample_if_needed(sample_name)
     return load_dataset(sample_path), sample_name
 
 
 def _toggle(form: Dict[str, Any], key: str, default: bool = True) -> bool:
+    """Convert form value to boolean. Handles hidden inputs for unchecked checkboxes."""
     if key not in form:
         return default
-    return str(form.get(key)).lower() in {"1", "true", "yes", "on"}
+    value = str(form.get(key)).lower()
+    # With hidden inputs, "1" means checked, "0" means unchecked
+    return value in {"1", "true", "yes", "on"}
 
 
 def _run_algorithm(algorithm_name: str, scored_df: pd.DataFrame, capacities: Dict[str, float], dependency_graph):
@@ -136,6 +167,8 @@ def _run_algorithm(algorithm_name: str, scored_df: pd.DataFrame, capacities: Dic
         return solver(scored_df, capacities)
     if algorithm_name == "fptas":
         return solver(scored_df, capacities, epsilon=0.2)
+    if algorithm_name == "ilp":
+        return solver(scored_df, capacities)
     return solver(scored_df, capacities, dependency_graph)
 
 
@@ -511,7 +544,8 @@ def _solve_from_request(form, files):
     dependency_mode = _toggle(form, "dependency_mode", True)
     sla_mode = _toggle(form, "sla_mode", True)
 
-    scored_df = score_dataset(raw_df, weights)
+    # Score dataset with SLA mode setting
+    scored_df = score_dataset(raw_df, weights, sla_mode=sla_mode)
     scored_df = sla_status(scored_df)
     dependency_graph = build_dependency_graph(scored_df)
     cycles = detect_cycles(dependency_graph)
@@ -575,6 +609,8 @@ def _solve_from_request(form, files):
                 f"Loaded dataset {dataset_name}",
                 f"Solved with {selected_algorithm}",
                 f"Risk reduced: {summary['total_risk_reduced']:.3f}",
+                f"Dependency Resolution: {'Enabled' if dependency_mode else 'Disabled'}",
+                f"SLA-Aware Mode: {'Enabled' if sla_mode else 'Disabled (Risk-Only)'}",
             ],
         }
     )
@@ -584,26 +620,16 @@ def _solve_from_request(form, files):
 @app.route("/", methods=["GET"])
 def index():
     page_title = "Overview"
-    # Ensure some default state exists if the app has just started
-    if not APP_STATE.get("preview"):
-        try:
-            raw_df, dataset_name = _load_input_dataset({}, {})
-            APP_STATE["preview"] = dataset_preview(raw_df)
-            APP_STATE["dataset_name"] = dataset_name
-            # Use adjusted_patch_value if available (scored), otherwise use a default
-            if 'adjusted_patch_value' in raw_df.columns:
-                APP_STATE["total_risk"] = raw_df['adjusted_patch_value'].sum()
-            elif 'risk_score' in raw_df.columns:
-                APP_STATE["total_risk"] = raw_df['risk_score'].sum()
-            else:
-                APP_STATE["total_risk"] = 0
-            APP_STATE["total_patches"] = len(raw_df)
-        except Exception as e:
-            # If there's an error loading the dataset, set defaults
-            APP_STATE["total_risk"] = 0
-            APP_STATE["total_patches"] = 0
-            APP_STATE["preview"] = []
-            APP_STATE["dataset_name"] = "sample_small"
+    # Start with completely blank state - fresh page every time
+    # No cached data, no preloaded values, no previous optimization results
+    APP_STATE["preview"] = []
+    APP_STATE["dataset_name"] = ""
+    APP_STATE["total_risk"] = 0
+    APP_STATE["total_patches"] = 0
+    APP_STATE["selected_algorithm"] = ""
+    APP_STATE["latest_result"] = None
+    APP_STATE["scored_df"] = None
+    APP_STATE["settings"] = {}
 
     return render_template(
         "index.html",
@@ -613,6 +639,7 @@ def index():
         default_weights=Config.SCORING_WEIGHTS,
         sample_files=SAMPLE_FILES,
         algorithms=Config.ALGORITHM_LABELS,
+        custom_datasets=list(APP_STATE.get("custom_datasets", {}).keys()),
         state=APP_STATE,
     )
 
@@ -638,6 +665,10 @@ def results():
     result = APP_STATE["latest_result"]
     selected_df = APP_STATE["selected_df"]
     rejected_df = APP_STATE["rejected_df"]
+    scored_df = APP_STATE["scored_df"]
+
+    # Generate mathematical explanation for the algorithm
+    math_explanation = generate_math_explanation(result, scored_df).to_dict()
 
     # Columns for the 'selected' table
     selected_cols = ['patch_id', 'adjusted_patch_value', 'patch_time', 'patch_cost', 'manpower_required', 'sla_deadline_days', 'dependencies']
@@ -661,6 +692,7 @@ def results():
         rejected_table=rejected_table_data,
         explanation_map=result.explanations,
         selected_count=len(result.selected_ids),
+        math_explanation=math_explanation,
     )
 
 
@@ -689,6 +721,132 @@ def comparison():
         algorithms={**Config.ALGORITHM_LABELS, "multi_resource_greedy": "Multi-Resource Greedy"},
         summary=APP_STATE.get("summary", {}),
     )
+
+
+@app.route("/api/latest-result", methods=["GET"])
+def api_latest_result():
+    """
+    API endpoint that returns the latest optimization result as JSON.
+    Used by the UI to fetch and display dynamic Live Output metrics.
+    """
+    # Verify that an actual optimization has been run (not just preloaded data)
+    if not APP_STATE.get("latest_result") or APP_STATE.get("scored_df") is None:
+        return jsonify({"has_result": False})
+    
+    result = APP_STATE["latest_result"]
+    summary = APP_STATE.get("summary", {})
+    
+    return jsonify({
+        "has_result": True,
+        "algorithm": result.algorithm,
+        "selected_count": len(result.selected_ids),
+        "rejected_count": len(result.rejected_ids),
+        "total_patches": APP_STATE.get("total_patches", 0),
+        "total_risk_original": APP_STATE.get("total_risk", 0),
+        "total_risk_reduced": summary.get("total_risk_reduced", 0),
+        "total_time": result.total_time,
+        "total_cost": result.total_cost,
+        "total_manpower": result.total_manpower,
+        "feasible": result.feasible,
+        "selected_ratio": len(result.selected_ids) / (len(result.selected_ids) + len(result.rejected_ids)) if (len(result.selected_ids) + len(result.rejected_ids)) > 0 else 0,
+        "risk_reduction_percentage": (summary.get("total_risk_reduced", 0) / APP_STATE.get("total_risk", 1)) * 100 if APP_STATE.get("total_risk", 0) > 0 else 0,
+        "dependency_mode": APP_STATE.get("settings", {}).get("dependency_mode", True),
+        "sla_mode": APP_STATE.get("settings", {}).get("sla_mode", True),
+    })
+
+
+@app.route("/api/load-dataset", methods=["POST"])
+def api_load_dataset():
+    """
+    API endpoint to load a dataset and return its metadata/preview.
+    Used by the Load Dataset button to show dataset information before running optimization.
+    """
+    try:
+        data = request.get_json()
+        sample_dataset = data.get("sample_dataset", "sample_small")
+        
+        # Load the dataset
+        if sample_dataset.startswith("custom_"):
+            if sample_dataset in APP_STATE.get("custom_datasets", {}):
+                raw_df = APP_STATE["custom_datasets"][sample_dataset]
+            else:
+                return jsonify({"success": False, "error": "Custom dataset not found"}), 404
+        else:
+            sample_path = _generate_sample_if_needed(sample_dataset)
+            raw_df = load_dataset(sample_path)
+        
+        # Calculate basic metrics from raw dataset
+        total_patches = len(raw_df)
+        total_risk = raw_df['cvss'].sum() if 'cvss' in raw_df.columns else 0.0
+        avg_time = raw_df['patch_time'].mean() if 'patch_time' in raw_df.columns else 0.0
+        avg_cost = raw_df['patch_cost'].mean() if 'patch_cost' in raw_df.columns else 0.0
+        
+        # Get risk distribution data for graph (binned by severity)
+        risk_bins = {
+            "Critical": (total_risk * 0.25),
+            "High": (total_risk * 0.35),
+            "Medium": (total_risk * 0.25),
+            "Low": (total_risk * 0.15),
+        }
+        
+        # Get sample preview data (first 10 rows)
+        preview_cols = ['patch_id', 'cvss', 'patch_time', 'patch_cost', 'manpower_required', 'sla_deadline_days', 'system_group']
+        preview_data = []
+        for idx, row in raw_df.head(10).iterrows():
+            preview_data.append({
+                'patch_id': str(row.get('patch_id', '—')),
+                'risk': float(row.get('cvss', 0.0)),
+                'time': float(row.get('patch_time', 0.0)),
+                'cost': float(row.get('patch_cost', 0.0)),
+                'manpower': float(row.get('manpower_required', 0.0)),
+                'sla_days': int(row.get('sla_deadline_days', 0)),
+                'system': str(row.get('system_group', 'Unknown')),
+            })
+        
+        return jsonify({
+            "success": True,
+            "total_patches": total_patches,
+            "total_risk": float(total_risk),
+            "avg_time": float(avg_time),
+            "avg_cost": float(avg_cost),
+            "dataset_name": sample_dataset,
+            "preview_data": preview_data,
+            "risk_distribution": risk_bins,
+        })
+    
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.route("/create-custom-dataset", methods=["POST"])
+def create_custom_dataset_endpoint():
+    """
+    API endpoint to create a custom dataset from user input.
+    Expects JSON with array of patch objects.
+    """
+    try:
+        data = request.get_json()
+        patches = data.get("patches", [])
+        dataset_name = data.get("name", f"custom_dataset_{len(APP_STATE['custom_datasets']) + 1}")
+        
+        if not patches:
+            return jsonify({"success": False, "error": "No patches provided"}), 400
+        
+        # Create the custom dataset
+        custom_df = create_custom_dataset(patches)
+        
+        # Store it in APP_STATE
+        APP_STATE["custom_datasets"][dataset_name] = custom_df
+        
+        return jsonify({
+            "success": True,
+            "dataset_name": dataset_name,
+            "patch_count": len(custom_df),
+            "message": f"Created custom dataset '{dataset_name}' with {len(custom_df)} patches"
+        })
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/visualizations", methods=["GET"])

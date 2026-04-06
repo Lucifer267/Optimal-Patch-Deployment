@@ -50,13 +50,52 @@ def build_comparison_frame(
 
 def quality_summary(comparison_frame: pd.DataFrame) -> dict:
     if comparison_frame.empty:
-        return {"best_algorithm": None, "best_risk": 0.0, "fastest_algorithm": None}
+        return {
+            "best_algorithm": None,
+            "best_risk": 0.0,
+            "fastest_algorithm": None,
+            "fastest_runtime": 0.0,
+            "best_feasible_algorithm": None,
+            "efficiency_leader": None,
+        }
 
-    best_row = comparison_frame.sort_values(["risk_reduced", "selected"], ascending=[False, False]).iloc[0]
-    fastest_row = comparison_frame.sort_values("runtime_seconds", ascending=True).iloc[0]
+    # Filter to feasible solutions only for primary rankings
+    feasible_frame = comparison_frame[comparison_frame["feasible"] == True]
+    
+    # Best quality: highest risk_reduced among feasible solutions
+    if not feasible_frame.empty:
+        best_row = feasible_frame.sort_values("risk_reduced", ascending=False).iloc[0]
+        best_algorithm = str(best_row["algorithm"])
+        best_risk = float(best_row["risk_reduced"])
+        best_feasible_algorithm = best_algorithm
+    else:
+        # Fallback to any solution if no feasible ones
+        best_row = comparison_frame.sort_values("risk_reduced", ascending=False).iloc[0]
+        best_algorithm = str(best_row["algorithm"])
+        best_risk = float(best_row["risk_reduced"])
+        best_feasible_algorithm = None
+    
+    # Fastest solver: lowest runtime among feasible solutions
+    if not feasible_frame.empty:
+        fastest_row = feasible_frame.sort_values("runtime_seconds", ascending=True).iloc[0]
+        fastest_algorithm = str(fastest_row["algorithm"])
+        fastest_runtime = float(fastest_row["runtime_seconds"])
+    else:
+        fastest_row = comparison_frame.sort_values("runtime_seconds", ascending=True).iloc[0]
+        fastest_algorithm = str(fastest_row["algorithm"])
+        fastest_runtime = float(fastest_row["runtime_seconds"])
+    
+    # Efficiency leader: best quality_score (risk reduction per second) among feasible
+    efficiency_leader = None
+    if not feasible_frame.empty:
+        efficiency_row = feasible_frame.sort_values("quality_score", ascending=False).iloc[0]
+        efficiency_leader = str(efficiency_row["algorithm"])
+    
     return {
-        "best_algorithm": str(best_row["algorithm"]),
-        "best_risk": float(best_row["risk_reduced"]),
-        "fastest_algorithm": str(fastest_row["algorithm"]),
-        "fastest_runtime": float(fastest_row["runtime_seconds"]),
+        "best_algorithm": best_algorithm,
+        "best_risk": best_risk,
+        "fastest_algorithm": fastest_algorithm,
+        "fastest_runtime": fastest_runtime,
+        "best_feasible_algorithm": best_feasible_algorithm,
+        "efficiency_leader": efficiency_leader,
     }

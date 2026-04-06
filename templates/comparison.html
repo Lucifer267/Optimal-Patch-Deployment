@@ -11,33 +11,50 @@
   <div class="kpi-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%); border-left: 4px solid #10b981;">
     <div style="display: flex; align-items: flex-start; justify-content: space-between;">
       <div>
-        <div class="kpi-label" style="color: #059669;">Best Quality</div>
-        <div class="kpi-value" style="color: #10b981; font-size: 1.8rem;">{{ summary.best_algorithm or 'n/a' }}</div>
-        <div class="kpi-desc" style="color: #059669;">Highest risk reduction</div>
+        <div class="kpi-label" style="color: #059669;">🏆 Best Quality</div>
+        <div class="kpi-value" style="color: #10b981; font-size: 1.6rem;">{{ summary.best_algorithm|replace('_', ' ')|title or 'n/a' }}</div>
+        <div style="font-size: 0.8rem; color: #059669; margin-top: 6px;">
+          Risk: {{ '%.3f'|format(summary.best_risk or 0) }}<br/>
+          {% if summary.best_feasible_algorithm %}<span style="font-size: 0.75rem;">✓ Feasible</span>{% endif %}
+        </div>
       </div>
-      <div style="font-size: 2.5rem; opacity: 0.3;">🏆</div>
     </div>
   </div>
 
   <div class="kpi-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fef3c7 100%); border-left: 4px solid #f59e0b;">
     <div style="display: flex; align-items: flex-start; justify-content: space-between;">
       <div>
-        <div class="kpi-label" style="color: #92400e;">Fastest Solver</div>
-        <div class="kpi-value" style="color: #f59e0b; font-size: 1.8rem;">{{ summary.fastest_algorithm or 'n/a' }}</div>
-        <div class="kpi-desc" style="color: #92400e;">Lowest runtime</div>
+        <div class="kpi-label" style="color: #92400e;">⚡ Fastest Solver</div>
+        <div class="kpi-value" style="color: #f59e0b; font-size: 1.6rem;">{{ summary.fastest_algorithm|replace('_', ' ')|title or 'n/a' }}</div>
+        <div style="font-size: 0.8rem; color: #92400e; margin-top: 6px;">
+          {{ '%.4f'|format(summary.fastest_runtime or 0) }}s<br/>
+          <span style="font-size: 0.75rem;">Execution Time</span>
+        </div>
       </div>
-      <div style="font-size: 2.5rem; opacity: 0.3;">⚡</div>
     </div>
   </div>
 
   <div class="kpi-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #f0f9ff 100%); border-left: 4px solid #0ea5e9;">
     <div style="display: flex; align-items: flex-start; justify-content: space-between;">
       <div>
-        <div class="kpi-label" style="color: #075985;">Peak Performance</div>
-        <div class="kpi-value" style="color: #0284c7; font-size: 1.8rem;">{{ '%.2f'|format(summary.best_risk or 0) }}</div>
-        <div class="kpi-desc" style="color: #075985;">Maximum risk score</div>
+        <div class="kpi-label" style="color: #075985;">⚙️ Most Efficient</div>
+        <div class="kpi-value" style="color: #0284c7; font-size: 1.6rem;">{{ summary.efficiency_leader|replace('_', ' ')|title or 'n/a' }}</div>
+        <div style="font-size: 0.8rem; color: #075985; margin-top: 6px;">
+          Best Quality/Time<br/>
+          <span style="font-size: 0.75rem;">Score Ratio</span>
+        </div>
       </div>
-      <div style="font-size: 2.5rem; opacity: 0.3;">📊</div>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="background: linear-gradient(135deg, #fdf2f8 0%, #fdf2f8 100%); border-left: 4px solid #ec4899;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #be185d;">ℹ️ Analysis</div>
+        <div style="font-size: 0.85rem; color: #be185d; margin-top: 6px;">
+          <strong>Best & Fastest</strong> are determined among <strong>feasible solutions only</strong>. Algorithms marked as infeasible are excluded from top rankings.
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -30,7 +30,131 @@
   </div>
 </div>
 
+<!-- Optimization Modes Display -->
+{% if state.settings and (state.settings.dependency_mode is not none or state.settings.sla_mode is not none) %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+  {% if state.settings.dependency_mode is not none %}
+  <div style="padding: 16px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(6, 182, 212, 0.04)); border-radius: 10px; border: 1px solid rgba(6, 182, 212, 0.2);">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+      {% if state.settings.dependency_mode %}
+      <span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>
+      <span style="font-weight: 700; color: #10b981;">✓ Dependency Resolution Enabled</span>
+      {% else %}
+      <span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 50%;"></span>
+      <span style="font-weight: 700; color: #f59e0b;">✗ Dependency Resolution Disabled</span>
+      {% endif %}
+    </div>
+    <p style="margin: 0; font-size: 0.85rem; color: #64748b; line-height: 1.4;">
+      {% if state.settings.dependency_mode %}
+      Solvers respected patch dependencies and executed in safe order
+      {% else %}
+      Solvers ignored dependencies and maximized value only
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+  
+  {% if state.settings.sla_mode is not none %}
+  <div style="padding: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.04)); border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.2);">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+      {% if state.settings.sla_mode %}
+      <span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>
+      <span style="font-weight: 700; color: #10b981;">✓ SLA-Aware Prioritization Enabled</span>
+      {% else %}
+      <span style="display: inline-block; width: 12px; height: 12px; background: #a435f0; border-radius: 50%;"></span>
+      <span style="font-weight: 700; color: #a435f0;">✗ Risk-Only Mode (SLA Disabled)</span>
+      {% endif %}
+    </div>
+    <p style="margin: 0; font-size: 0.85rem; color: #64748b; line-height: 1.4;">
+      {% if state.settings.sla_mode %}
+      Prioritized patches with urgency based on SLA deadlines (30% weight)
+      {% else %}
+      Pure risk maximization, ignored SLA deadlines (5% weight)
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="content-grid-single-col">
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <div style="width: 6px; height: 28px; background: linear-gradient(180deg, #7c3aed 0%, #a855f7 50%, #e879f9 100%); border-radius: 3px;"></div>
+        <h2 style="margin: 0; color: #4c1d95; font-size: 1.4rem;">🧮 Algorithm Mathematics</h2>
+      </div>
+      <p style="color: #6b21a8; font-size: 1rem; margin: 0;">Step-by-step mathematical breakdown of how <strong>{{ math_explanation.algorithm_full_name }}</strong> calculated the solution</p>
+    </div>
+    <div class="card-body" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.03), rgba(168, 85, 247, 0.06)); border-radius: 8px; padding: 20px;">
+      <!-- Core Formula -->
+      <div style="margin-bottom: 28px; padding: 18px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 10px; border-left: 5px solid #a855f7; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.1);">
+        <div style="font-weight: 800; font-size: 1rem; color: #7c3aed; margin-bottom: 12px; letter-spacing: 0.3px;">📐 CORE FORMULA</div>
+        <div style="font-family: 'Monaco', 'Courier New', monospace; font-size: 1rem; color: #4c1d95; line-height: 1.8; word-break: break-word; font-weight: 600; letter-spacing: 0.2px; background: rgba(255, 255, 255, 0.6); padding: 14px; border-radius: 6px;">
+          {{ math_explanation.core_formula }}
+        </div>
+      </div>
+
+      <!-- Key Parameters -->
+      {% if math_explanation.key_parameters %}
+      <div style="margin-bottom: 28px;">
+        <div style="font-weight: 800; font-size: 1rem; color: #7c3aed; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px;">
+          <span>⚙️ KEY PARAMETERS</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+          {% for param_name, param_value in math_explanation.key_parameters.items() %}
+          <div style="padding: 14px; background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%); border-radius: 8px; border-left: 4px solid #a855f7; box-shadow: 0 1px 4px rgba(168, 85, 247, 0.08); transition: all 0.2s ease;">
+            <div style="font-size: 0.9rem; color: #7c3aed; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.2px;">{{ param_name }}</div>
+            <div style="font-weight: 800; color: #4c1d95; font-family: 'Monaco', 'Courier New', monospace; font-size: 1.05rem;">{{ param_value }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Calculation Steps -->
+      <div style="margin-bottom: 28px;">
+        <div style="font-weight: 800; font-size: 1rem; color: #7c3aed; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px;">
+          <span>📊 CALCULATION STEPS</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          {% for step in math_explanation.steps %}
+          <div style="padding: 16px 18px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 10px; border-left: 5px solid #a855f7; display: flex; gap: 16px; box-shadow: 0 2px 6px rgba(168, 85, 247, 0.08); transition: all 0.2s ease;">
+            <div style="min-width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; border-radius: 8px; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);">
+              {{ step.step }}
+            </div>
+            <div style="flex: 1;">
+              <div style="font-weight: 700; color: #4c1d95; margin-bottom: 8px; font-size: 1rem;">{{ step.description }}</div>
+              {% if step.formula %}
+              <div style="font-family: 'Monaco', 'Courier New', monospace; font-size: 0.95rem; color: #5b21b6; margin-bottom: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.7); border-radius: 6px; border-left: 3px solid #d6bcfa; font-weight: 600; word-break: break-word;">
+                {{ step.formula }}
+              </div>
+              {% endif %}
+              {% if step.value %}
+              <div style="font-size: 0.95rem; color: #2d3748; background: linear-gradient(135deg, #e0e7ff 0%, #f0e7fe 100%); padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 6px; font-weight: 700; border-left: 3px solid #7c3aed;">
+                ✓ <strong>{{ step.value }}</strong>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Final Result -->
+      {% if math_explanation.final_result %}
+      <div style="margin-top: 28px; padding: 18px; background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%); border-radius: 10px; border-left: 5px solid #7c3aed; border-top: 2px solid #d6bcfa; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12);">
+        <div style="font-weight: 800; font-size: 1rem; color: #7c3aed; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px;">
+          <span>✅ FINAL RESULT</span>
+        </div>
+        <div style="white-space: pre-wrap; color: #4c1d95; font-family: 'Monaco', 'Courier New', monospace; font-size: 1rem; line-height: 1.8; background: rgba(255, 255, 255, 0.6); padding: 14px; border-radius: 6px; font-weight: 600;">
+          {{ math_explanation.final_result }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">

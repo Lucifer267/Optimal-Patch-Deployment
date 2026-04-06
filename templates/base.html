@@ -11,61 +11,91 @@
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 </head>
 <body>
-  <aside class="sidebar">
+  <!-- SIDEBAR NAVIGATION - ENHANCED -->
+  <aside class="sidebar" data-component="sidebar">
     <div class="brand-block">
-      <div class="brand-mark">PS</div>
+      <div class="brand-mark">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1H3z"></path><circle cx="9" cy="7" r="4"></circle><circle cx="19" cy="8" r="3"></circle></svg>
+      </div>
       <div>
-        <div class="brand-title">Patch Sentinel</div>
-        <div class="brand-subtitle">Optimization Studio</div>
+        <div class="brand-title">Optimization Lab</div>
+        <div class="brand-subtitle">Patch Sentinel</div>
       </div>
     </div>
     <nav class="side-nav">
-      <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+      <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" data-icon="home">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         </span>
-        Overview
+        <span class="nav-label">Overview</span>
       </a>
-      <a href="{{ url_for('results') }}" class="nav-link {% if request.endpoint == 'results' %}active{% endif %}">
+      <a href="{{ url_for('results') }}" class="nav-link {% if request.endpoint == 'results' %}active{% endif %}" data-icon="file">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </span>
-        Results
+        <span class="nav-label">Results</span>
       </a>
-      <a href="{{ url_for('comparison') }}" class="nav-link {% if request.endpoint == 'comparison' %}active{% endif %}">
+      <a href="{{ url_for('comparison') }}" class="nav-link {% if request.endpoint == 'comparison' %}active{% endif %}" data-icon="chart">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
         </span>
-        Comparison
+        <span class="nav-label">Compare</span>
       </a>
-      <a href="{{ url_for('visualizations') }}" class="nav-link {% if request.endpoint == 'visualizations' %}active{% endif %}">
+      <a href="{{ url_for('visualizations') }}" class="nav-link {% if request.endpoint == 'visualizations' %}active{% endif %}" data-icon="chart">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
         </span>
-        Visuals
+        <span class="nav-label">Visuals</span>
       </a>
-      <a href="{{ url_for('config_page') }}" class="nav-link {% if request.endpoint == 'config_page' %}active{% endif %}">
+      <a href="{{ url_for('config_page') }}" class="nav-link {% if request.endpoint == 'config_page' %}active{% endif %}" data-icon="settings">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </span>
-        Config
+        <span class="nav-label">Settings</span>
       </a>
     </nav>
+    <!-- NEW: Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="status-indicator" id="optimization-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </div>
   </aside>
 
+  <!-- MAIN CONTENT AREA -->
   <main class="main-content">
-    <header class="topbar">
-      <h1>{{ page_title or 'Overview' }}</h1>
+    <!-- ENHANCED TOPBAR -->
+    <header class="topbar" data-component="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">{{ page_title or 'Overview' }}</h1>
+      </div>
       <div class="topbar-actions">
-        <a class="primary-button" href="{{ url_for('results') }}">View Latest Result</a>
+        <a class="btn btn-primary-minimal" href="{{ url_for('results') }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+          Latest Result
+        </a>
       </div>
     </header>
 
+    <!-- FLASH MESSAGES - ENHANCED -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="flash-messages">
+        <div class="flash-messages" data-component="flash">
         {% for category, message in messages %}
-          <div class="flash-message flash-{{ category }}">{{ message }}</div>
+          <div class="flash-message flash-{{ category }}" role="alert">
+            <svg class="flash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              {% if category == 'success' %}
+              <polyline points="20 6 9 17 4 12"></polyline>
+              {% elif category == 'error' %}
+              <circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>
+              {% else %}
+              <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+              {% endif %}
+            </svg>
+            {{ message }}
+            <button type="button" class="flash-close" onclick="this.parentElement.remove();">×</button>
+          </div>
         {% endfor %}
         </div>
       {% endif %}
@@ -73,5 +103,24 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  <!-- NEW: Global Loading Overlay (for future use) -->
+  <div id="loading-overlay" class="loading-overlay" style="display:none;">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Processing optimization...</div>
+    </div>
+  </div>
+
+  <!-- Inline scripts for interactivity -->
+  <script>
+    // Update status indicator on form submission
+    document.addEventListener('submit', function(e) {
+      const optimizationStatus = document.getElementById('optimization-status');
+      if (optimizationStatus && e.target.action?.includes('/solve')) {
+        optimizationStatus.innerHTML = '<span class="status-dot status-working"></span><span class="status-text">Optimizing...</span>';
+      }
+    });
+  </script>
 </body>
 </html>
