@@ -735,6 +735,41 @@ def api_latest_result():
     
     result = APP_STATE["latest_result"]
     summary = APP_STATE.get("summary", {})
+    scored_df = APP_STATE.get("scored_df")
+    
+    # Calculate risk distribution for selected patches
+    selected_df = scored_df[scored_df["patch_id"].astype(str).isin(set(result.selected_ids))].copy() if scored_df is not None else None
+    
+    risk_distribution = {
+        "Critical": 0.0,
+        "High": 0.0,
+        "Medium": 0.0,
+        "Low": 0.0,
+    }
+    
+    if selected_df is not None and len(selected_df) > 0:
+        # Calculate risk thresholds based on selected patches
+        risks = selected_df["adjusted_patch_value"].values
+        total_selected_risk = risks.sum()
+        
+        if total_selected_risk > 0:
+            # Define severity thresholds (percentiles)
+            p75 = float(pd.Series(risks).quantile(0.75))
+            p50 = float(pd.Series(risks).quantile(0.50))
+            p25 = float(pd.Series(risks).quantile(0.25))
+            
+            # Categorize selected patches by risk
+            critical = selected_df[selected_df["adjusted_patch_value"] >= p75]["adjusted_patch_value"].sum()
+            high = selected_df[(selected_df["adjusted_patch_value"] >= p50) & (selected_df["adjusted_patch_value"] < p75)]["adjusted_patch_value"].sum()
+            medium = selected_df[(selected_df["adjusted_patch_value"] >= p25) & (selected_df["adjusted_patch_value"] < p50)]["adjusted_patch_value"].sum()
+            low = selected_df[selected_df["adjusted_patch_value"] < p25]["adjusted_patch_value"].sum()
+            
+            risk_distribution = {
+                "Critical": float(critical),
+                "High": float(high),
+                "Medium": float(medium),
+                "Low": float(low),
+            }
     
     return jsonify({
         "has_result": True,
@@ -750,6 +785,7 @@ def api_latest_result():
         "feasible": result.feasible,
         "selected_ratio": len(result.selected_ids) / (len(result.selected_ids) + len(result.rejected_ids)) if (len(result.selected_ids) + len(result.rejected_ids)) > 0 else 0,
         "risk_reduction_percentage": (summary.get("total_risk_reduced", 0) / APP_STATE.get("total_risk", 1)) * 100 if APP_STATE.get("total_risk", 0) > 0 else 0,
+        "risk_distribution": risk_distribution,
         "dependency_mode": APP_STATE.get("settings", {}).get("dependency_mode", True),
         "sla_mode": APP_STATE.get("settings", {}).get("sla_mode", True),
     })

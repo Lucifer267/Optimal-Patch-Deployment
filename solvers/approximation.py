@@ -47,17 +47,43 @@ def fptas_knapsack(scored: pd.DataFrame, capacities: Dict[str, float], epsilon: 
     selected_df = items.iloc[selected_indices].copy() if selected_indices else items.iloc[0:0].copy()
     selected_ids = selected_df["patch_id"].astype(str).tolist()
     rejected_ids = [str(item) for item in items["patch_id"].tolist() if str(item) not in set(selected_ids)]
+    
+    # Check feasibility against ALL constraints
+    feasible = True
+    feasibility_notes = []
+    maintenance_window = capacities.get("maintenance_window_hours", float('inf'))
+    budget = capacities.get("budget", float('inf'))
+    manpower_cap = capacities.get("manpower", float('inf'))
+    
+    total_time = float(selected_df["patch_time"].sum())
+    total_cost = float(selected_df["patch_cost"].sum())
+    total_manpower = float(selected_df["manpower_required"].sum())
+    
+    if total_time > maintenance_window:
+        feasible = False
+        feasibility_notes.append(f"Time: {total_time:.2f} > {maintenance_window:.2f}")
+    if total_cost > budget:
+        feasible = False
+        feasibility_notes.append(f"Budget: {total_cost:.2f} > {budget:.2f}")
+    if total_manpower > manpower_cap:
+        feasible = False
+        feasibility_notes.append(f"Manpower: {total_manpower:.2f} > {manpower_cap:.2f}")
+    
+    notes = [f"Approximation with epsilon={epsilon:.2f} for the single-constraint time knapsack."]
+    if feasibility_notes:
+        notes.extend(feasibility_notes)
+    
     return OptimizationResult(
         algorithm="fptas",
         selected_ids=selected_ids,
         rejected_ids=rejected_ids,
         total_value=float(selected_df["adjusted_patch_value"].sum()),
-        total_time=float(selected_df["patch_time"].sum()),
-        total_cost=float(selected_df["patch_cost"].sum()),
-        total_manpower=float(selected_df["manpower_required"].sum()),
+        total_time=total_time,
+        total_cost=total_cost,
+        total_manpower=total_manpower,
         runtime_seconds=perf_counter() - start,
-        feasible=True,
-        notes=[f"Approximation with epsilon={epsilon:.2f} for the single-constraint time knapsack."],
+        feasible=feasible,
+        notes=notes,
         explanations=build_explanation_map(items, selected_ids),
         score_breakdown={"fptas": 1.0},
         comparison_note="Polynomial-time approximation for the classic single-constraint case.",

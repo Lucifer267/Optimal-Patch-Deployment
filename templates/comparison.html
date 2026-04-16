@@ -47,12 +47,51 @@
     </div>
   </div>
 
+  <div class="kpi-card" style="background: linear-gradient(135deg, #f5f3ff 0%, #f0f3ff 100%); border-left: 4px solid #8b5cf6;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #6d28d9;">💾 Conservative</div>
+        <div class="kpi-value" style="color: #7c3aed; font-size: 1.6rem;">{{ summary.most_conservative|replace('_', ' ')|title or 'n/a' }}</div>
+        <div style="font-size: 0.8rem; color: #6d28d9; margin-top: 6px;">
+          Lowest Resource<br/>
+          <span style="font-size: 0.75rem;">Utilization</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="background: linear-gradient(135deg, #faf5ff 0%, #f5e6ff 100%); border-left: 4px solid #d946ef;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #831843;">📦 Best Coverage</div>
+        <div class="kpi-value" style="color: #be185d; font-size: 1.6rem;">{{ summary.best_coverage|replace('_', ' ')|title or 'n/a' }}</div>
+        <div style="font-size: 0.8rem; color: #831843; margin-top: 6px;">
+          Most Patches<br/>
+          <span style="font-size: 0.75rem;">Selected</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="kpi-card" style="background: linear-gradient(135deg, #fdf2f8 0%, #fdf2f8 100%); border-left: 4px solid #ec4899;">
     <div style="display: flex; align-items: flex-start; justify-content: space-between;">
       <div>
-        <div class="kpi-label" style="color: #be185d;">ℹ️ Analysis</div>
-        <div style="font-size: 0.85rem; color: #be185d; margin-top: 6px;">
-          <strong>Best & Fastest</strong> are determined among <strong>feasible solutions only</strong>. Algorithms marked as infeasible are excluded from top rankings.
+        <div class="kpi-label" style="color: #be185d;">✅ Feasibility</div>
+        <div class="kpi-value" style="color: #ec4899; font-size: 1.6rem;">{{ '%.0f'|format(summary.feasibility_rate * 100) }}%</div>
+        <div style="font-size: 0.8rem; color: #be185d; margin-top: 6px;">
+          Valid Solutions<br/>
+          <span style="font-size: 0.75rem;">Among All Algorithms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 4px solid #fbbf24;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div class="kpi-label" style="color: #78350f;">📊 Summary</div>
+        <div style="font-size: 0.85rem; color: #78350f; margin-top: 6px;">
+          <strong>Best & Fastest</strong> determined among <strong>feasible solutions only</strong>. Infeasible algorithms excluded from rankings but shown for reference with constraint violations highlighted.
         </div>
       </div>
     </div>
@@ -86,6 +125,7 @@
               <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Time</th>
               <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Manpower</th>
               <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Feasible</th>
+              <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: #1c1d1f; font-size: 0.9rem; letter-spacing: 0.3px;">Constraint Violations</th>
             </tr>
           </thead>
           <tbody>
@@ -144,6 +184,15 @@
                   {{ 'Feasible' if row.feasible else 'Infeasible' }}
                 </span>
               </td>
+              <td style="padding: 14px 16px; text-align: center;">
+                {% if row.constraint_violations %}
+                  <div style="display: inline-block; background: rgba(239, 68, 68, 0.15); color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; max-width: 180px; word-wrap: break-word;">
+                    {{ row.constraint_violations }}
+                  </div>
+                {% else %}
+                  <span style="color: #059669; font-size: 0.85rem; font-weight: 600;">—</span>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -157,6 +206,9 @@
         <div style="display: flex; align-items: center; gap: 8px;">
           <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></div>
           <span>Infeasible solution</span>
+        </div>
+        <div style="margin-left: auto; font-size: 0.8rem; color: #666; font-style: italic;">
+          💡 <strong>Constraint Violations</strong> shows which constraints (Time, Budget, Manpower) are exceeded for infeasible solutions.
         </div>
       </div>
     </div>

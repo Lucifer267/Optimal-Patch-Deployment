@@ -2,24 +2,24 @@
 
 {% block content %}
 <!-- SECTION: Key Performance Indicators -->
-<div class="kpi-grid">
+<div class="kpi-grid" id="kpi-grid">
   <div class="kpi-card">
-    <div class="kpi-value">{{ state.preview|length if state.preview else 0 }}</div>
+    <div class="kpi-value" id="kpi-candidates">{{ state.preview|length if state.preview else 0 }}</div>
     <div class="kpi-label">📊 Patch Candidates</div>
-    <div class="kpi-desc">From '{{ state.dataset_name or 'sample_small' }}' dataset</div>
+    <div class="kpi-desc">From '<span id="kpi-dataset">{{ state.dataset_name or 'sample_small' }}</span>' dataset</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-value">{{ state.selected_algorithm|replace('_', ' ')|title if state.selected_algorithm else '—' }}</div>
+    <div class="kpi-value" id="kpi-solver">{{ state.selected_algorithm|replace('_', ' ')|title if state.selected_algorithm else '—' }}</div>
     <div class="kpi-label">⚙️ Active Solver</div>
     <div class="kpi-desc">Optimization algorithm in use</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-value">{{ '%d'|format(state.total_risk|int) if state.total_risk else '0' }}</div>
+    <div class="kpi-value" id="kpi-risk">{{ '%d'|format(state.total_risk|int) if state.total_risk else '0' }}</div>
     <div class="kpi-label">⚠️ Total Risk</div>
     <div class="kpi-desc">Sum of all candidate patch risks</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-value">{{ state.total_patches if state.total_patches else '0' }}</div>
+    <div class="kpi-value" id="kpi-patches">{{ state.total_patches if state.total_patches else '0' }}</div>
     <div class="kpi-label">📦 Total Patches</div>
     <div class="kpi-desc">Number of items in the dataset</div>
   </div>
@@ -382,6 +382,26 @@
   document.addEventListener('DOMContentLoaded', function() {
     const runButton = document.getElementById('run-button');
     const form = document.getElementById('optimization-form');
+    const datasetSelect = document.getElementById('sample_dataset');
+    const algorithmSelect = document.getElementById('algorithm');
+    
+    // Update KPI cards when dataset selection changes
+    if (datasetSelect) {
+      datasetSelect.addEventListener('change', function() {
+        if (this.value) {
+          loadDatasetMetadata(this.value);
+        }
+      });
+    }
+    
+    // Update algorithm display when algorithm selection changes
+    if (algorithmSelect) {
+      algorithmSelect.addEventListener('change', function() {
+        if (this.value) {
+          updateAlgorithmKPI(this.value);
+        }
+      });
+    }
     
     // Add loading state to button
     form.addEventListener('submit', function(e) {
@@ -403,6 +423,34 @@
     }
   });
   
+  
+  function loadDatasetMetadata(datasetName) {
+    fetch('{{ url_for("api_load_dataset") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sample_dataset: datasetName })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update KPI cards with dataset metadata
+        document.getElementById('kpi-candidates').textContent = data.total_patches;
+        document.getElementById('kpi-risk').textContent = Math.round(data.total_risk);
+        document.getElementById('kpi-patches').textContent = data.total_patches;
+        document.getElementById('kpi-dataset').textContent = datasetName;
+      }
+    })
+    .catch(error => console.log('Dataset load error:', error));
+  }
+  
+  function updateAlgorithmKPI(algorithmName) {
+    const algorithmLabels = {{ algorithms | tojson }};
+    const displayName = algorithmLabels[algorithmName] || formatAlgorithmName(algorithmName);
+    document.getElementById('kpi-solver').textContent = displayName;
+  }
+  
   function fetchAndDisplayLiveOutput() {
     fetch('{{ url_for("api_latest_result") }}')
       .then(response => response.json())
@@ -410,6 +458,9 @@
         const contentDiv = document.getElementById('live-output-content');
         
         if (data.has_result) {
+          // Update KPI Cards
+          updateKPICards(data);
+          
           // Display metrics and visualization
           const riskReduction = data.total_risk_reduced || 0;
           const riskPercent = data.risk_reduction_percentage || 0;
@@ -459,6 +510,12 @@
                 </div>
               </div>
               
+              <!-- Risk Breakdown Distribution Chart -->
+              <div style="margin-top: 20px; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Risk Breakdown (Selected Patches)</div>
+                <div id="live-risk-distribution" style="width: 100%; height: 200px;"></div>
+              </div>
+              
               <!-- Algorithm Badge -->
               <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.8rem; background: var(--primary-color); color: white; padding: 4px 8px; border-radius: 4px; display: inline-block;">${formatAlgorithmName(data.algorithm)}</span>
@@ -466,9 +523,58 @@
               </div>
             </div>
           `;
+          
+          // Render risk distribution chart if available
+          if (data.risk_distribution) {
+            const riskLabels = Object.keys(data.risk_distribution);
+            const riskValues = Object.values(data.risk_distribution);
+            const riskColors = ['#dc2626', '#f97316', '#eab308', '#22c55e'];
+            
+            const trace = {
+              labels: riskLabels,
+              values: riskValues,
+              type: 'pie',
+              marker: {
+                colors: riskColors,
+              },
+              textposition: 'inside',
+              textinfo: 'label+percent',
+              hovertemplate: '%{label}: %{value:.2f} risk<extra></extra>',
+            };
+            
+            const layout = {
+              margin: { l: 0, r: 0, t: 0, b: 0 },
+              font: { family: 'Inter, sans-serif', color: '#1c1d1f' },
+              paper_bgcolor: 'transparent',
+              plot_bgcolor: 'transparent',
+              showlegend: true,
+              legend: { 
+                orientation: 'v',
+                x: 1.05,
+                y: 1,
+                font: { size: 11 }
+              }
+            };
+            
+            const config = {
+              responsive: true,
+              displayModeBar: false,
+              staticPlot: false,
+            };
+            
+            Plotly.newPlot('live-risk-distribution', [trace], layout, config);
+          }
         }
       })
       .catch(error => console.log('Live output fetch:', error));
+  }
+  
+  function updateKPICards(data) {
+    // Update KPI cards with live data
+    document.getElementById('kpi-candidates').textContent = data.total_patches;
+    document.getElementById('kpi-solver').textContent = formatAlgorithmName(data.algorithm);
+    document.getElementById('kpi-risk').textContent = Math.round(data.total_risk_original);
+    document.getElementById('kpi-patches').textContent = data.total_patches;
   }
   
   function formatAlgorithmName(name) {
